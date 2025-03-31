@@ -1,0 +1,35 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  font-weight: normal;
+}
+
+:root {
+  --primary-color: #5e72e4;
+  --background-color: #1e1e2d;
+  --card-background: #2a2a3c;
+  --text-color: #c0bfd4;
+  --text-light: #a7a7c5;
+  --border-color: #464670;
+  --header-height: 70px;
+  --footer-height: 50px;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  min-height: 100vh;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+} 
