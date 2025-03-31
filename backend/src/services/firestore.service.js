@@ -1,101 +1,71 @@
 const admin = require('../config/firebase');
 const db = admin.firestore();
 
-class FirestoreService {
+const getAllConfigs = async () => {
+  const snapshot = await db.collection('configs').get();
+  return snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
+};
 
-  async getConfigByName(name) {
-    const configRef = db.collection('configurations').doc(name);
-    const doc = await configRef.get();
-    
-    if (!doc.exists) {
-      return null;
-    }
-    
-    return { id: doc.id, ...doc.data() };
-  }
+const getConfigByName = async (name) => {
+  const doc = await db.collection('configs').doc(name).get();
+  if (!doc.exists) return null;
+  return {
+    id: doc.id,
+    ...doc.data()
+  };
+};
 
-  async getAllConfigs() {
-    const configsRef = db.collection('configurations');
-    const snapshot = await configsRef.get();
-    
-    if (snapshot.empty) {
-      return [];
-    }
-    
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  }
+const setConfig = async (name, configData, userId) => {
+  const configRef = db.collection('configs').doc(name);
   
-  async setConfig(name, data, userId) {
-    const configRef = db.collection('configurations').doc(name);
-    const doc = await configRef.get();
-    
-    const timestamp = admin.firestore.FieldValue.serverTimestamp();
-    
-    const configData = {
-      ...data,
-      updatedBy: userId,
-      updatedAt: timestamp,
-    };
+  return await db.runTransaction(async (transaction) => {
+    const doc = await transaction.get(configRef);
     
     if (!doc.exists) {
-      configData.createdBy = userId;
-      configData.createdAt = timestamp;
-      configData.version = 1;
-    } else {
-      configData.version = (doc.data().version || 0) + 1;
-    }
-    
-    if (doc.exists) {
-      const historyRef = db.collection('configurations')
-        .doc(name)
-        .collection('history')
-        .doc(`v${doc.data().version || 1}`);
-        
-      await historyRef.set({
-        ...doc.data(),
-        archivedAt: timestamp,
-      });
-    }
-    
-    await configRef.set(configData, { merge: true });
-    
-    const updatedDoc = await configRef.get();
-    return { id: updatedDoc.id, ...updatedDoc.data() };
-  }
-  
-  async deleteConfig(name) {
-    const configRef = db.collection('configurations').doc(name);
-    const doc = await configRef.get();
-    
-    if (!doc.exists) {
-      return false;
-    }
-    
-    await configRef.delete();
-    return true;
-  }
-
-  async getConfigForCountry(name, countryCode) {
-    const configRef = db.collection('configurations').doc(name);
-    const doc = await configRef.get();
-    
-    if (!doc.exists) {
-      return null;
-    }
-    
-    const data = doc.data();
-    
-    if (data.countryOverrides && data.countryOverrides[countryCode]) {
+      const newConfig = {
+        ...configData,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedBy: userId
+      };
+      
+      transaction.set(configRef, newConfig);
       return {
-        id: doc.id,
-        ...data,
-        ...data.countryOverrides[countryCode],
-        countryOverrides: undefined
+        id: name,
+        ...newConfig
       };
     }
     
-    return { id: doc.id, ...data };
-  }
-}
+    const currentData = doc.data();
+    const updatedConfig = {
+      ...currentData,
+      ...configData,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedBy: userId
+    };
+    
+    transaction.update(configRef, updatedConfig);
+    return {
+      id: name,
+      ...updatedConfig
+    };
+  });
+};
 
-module.exports = new FirestoreService(); 
+const deleteConfig = async (name) => {
+  const doc = await db.collection('configs').doc(name).get();
+  if (!doc.exists) return false;
+  
+  await db.collection('configs').doc(name).delete();
+  return true;
+};
+
+module.exports = {
+  getAllConfigs,
+  getConfigByName,
+  setConfig,
+  deleteConfig
+}; 

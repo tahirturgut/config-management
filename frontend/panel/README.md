@@ -1,4 +1,3 @@
-
 # Mobile Config Management System - Frontend
 
 This project is the admin panel frontend for managing mobile application configurations. Built with Vue 3 and Vite.
@@ -17,6 +16,29 @@ npm install
 npm run dev
 
 npm run build
+```
+
+## Environment Variables
+
+Create a `.env` file in the project root with the following variables:
+
+```env
+# API Configuration
+VITE_API_URL=http://localhost:3000/api
+
+# Firebase Configuration
+VITE_FIREBASE_API_KEY=your-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+VITE_FIREBASE_APP_ID=your-app-id
+VITE_FIREBASE_MEASUREMENT_ID=your-measurement-id
+
+# Application Configuration
+VITE_APP_NAME=Config Management System
+VITE_APP_VERSION=1.0.0
+VITE_APP_ENV=development
 ```
 
 ## Testing
@@ -56,17 +78,6 @@ src/
 │   └── __tests__/
 └── utils/
     └── __tests__/
-```
-
-## Environment Variables
-
-Edit the `.env` file in the project root and add:
-
-```
-VITE_FIREBASE_API_KEY=your-api-key
-VITE_FIREBASE_AUTH_DOMAIN=your-auth-domain
-VITE_FIREBASE_PROJECT_ID=your-project-id
-VITE_API_BASE_URL=your_url
 ```
 
 ## Deployment
