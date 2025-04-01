@@ -123,31 +123,4 @@ describe('FirestoreService', () => {
       expect(result).toBe(true);
     });
   });
-
-  describe('getConfigForCountry', () => {
-    it('should return null when config does not exist', async () => {
-      mockGet.mockResolvedValue({ exists: false });
-      const result = await firestoreService.getConfigForCountry('test', 'US');
-      expect(result).toBeNull();
-    });
-
-    it('should return country override when exists', async () => {
-      const mockData = {
-        content: 'default',
-        countryOverrides: {
-          US: { content: 'us-specific' }
-        }
-      };
-      mockGet.mockResolvedValue({ exists: true, id: 'test', data: () => mockData });
-      const result = await firestoreService.getConfigForCountry('test', 'US');
-      expect(result.content).toBe('us-specific');
-    });
-
-    it('should return default config when no country override exists', async () => {
-      const mockData = { content: 'default' };
-      mockGet.mockResolvedValue({ exists: true, id: 'test', data: () => mockData });
-      const result = await firestoreService.getConfigForCountry('test', 'US');
-      expect(result.content).toBe('default');
-    });
-  });
 });

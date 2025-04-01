@@ -1,3 +1,4 @@
+const { deleteField } = require('firebase/firestore');
 const admin = require('../config/firebase');
 const db = admin.firestore();
 
@@ -5,7 +6,11 @@ const getAllConfigs = async () => {
   const snapshot = await db.collection('configs').get();
   return snapshot.docs.map(doc => ({
     id: doc.id,
-    ...doc.data()
+    content: doc.data().content,
+    description: doc.data().description,
+    createdAt: doc.data().createdAt,
+    countryOverrides: doc.data().countryOverrides,
+    version: doc.data().version
   }));
 };
 
@@ -14,7 +19,11 @@ const getConfigByName = async (name) => {
   if (!doc.exists) return null;
   return {
     id: doc.id,
-    ...doc.data()
+    content: doc.data().content,
+    description: doc.data().description,
+    createdAt: doc.data().createdAt,
+    countryOverrides: doc.data().countryOverrides,
+    version: doc.data().version
   };
 };
 
@@ -29,7 +38,8 @@ const setConfig = async (name, configData, userId) => {
         ...configData,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedBy: userId
+        updatedBy: userId,
+        version: 1
       };
       
       transaction.set(configRef, newConfig);
@@ -44,14 +54,12 @@ const setConfig = async (name, configData, userId) => {
       ...currentData,
       ...configData,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedBy: userId
+      updatedBy: userId,
+      version: (currentData.version || 0) + 1
     };
     
     transaction.update(configRef, updatedConfig);
-    return {
-      id: name,
-      ...updatedConfig
-    };
+    return { id: name, ...updatedConfig };
   });
 };
 

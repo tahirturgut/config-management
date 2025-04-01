@@ -16,8 +16,7 @@ api.interceptors.request.use(
     if (!auth.currentUser) {
       throw new Error('No active session')
     }
-    const token = await auth.currentUser.getIdToken()
-    config.headers.Authorization = `Bearer ${token}`
+    config.headers.Authorization = `Bearer ${await auth.currentUser.getIdToken()}`
     return config
   },
   (error) => Promise.reject(error)
@@ -33,8 +32,8 @@ export const useConfigStore = defineStore('config', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get('/config')
-      configs.value = response.data.data || []
+      const { data } = await api.get('/config')
+      configs.value = data?.data || []
       return configs.value
     } catch (err) {
       error.value = err.response?.data?.message || err.message || 'Failed to load configurations'
@@ -48,8 +47,8 @@ export const useConfigStore = defineStore('config', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get(`/config/${name}`)
-      currentConfig.value = response.data.data || null
+      const { data } = await api.get(`/config/${name}`)
+      currentConfig.value = data?.data || null
       return currentConfig.value
     } catch (err) {
       if (err.response?.status === 404) {
@@ -67,9 +66,9 @@ export const useConfigStore = defineStore('config', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.post(`/config/${name}`, configData)
+      const { data } = await api.post(`/config/${name}`, configData)
       await fetchConfigs()
-      return response.data.data
+      return data?.data
     } catch (err) {
       error.value = err.response?.data?.message || err.message || 'Failed to save configuration'
       throw err

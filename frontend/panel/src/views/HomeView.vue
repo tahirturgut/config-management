@@ -39,7 +39,6 @@ onMounted(async () => {
   try {
     await configStore.fetchConfigs()
   } catch (error) {
-    // Handle error if needed
   } finally {
     isLoading.value = false
   }
@@ -145,10 +144,9 @@ const formatDate = (dateString) => {
   }).format(date);
 }
 
-// Update the editConfig function to initialize editedId with the original config ID
 const editConfig = (config) => {
   selectedConfig.value = config
-  editedId.value = config.id  // Save the original ID into the new reactive variable
+  editedId.value = config.id
   editDefaultValue.value = typeof config.content === 'object' 
     ? JSON.stringify(config.content, null, 2) 
     : String(config.content || '')
@@ -195,21 +193,18 @@ const saveEditedConfig = async () => {
       }
     }
     
-    if (configData.countryOverrides && Object.keys(configData.countryOverrides).length === 0) {
-      configData.countryOverrides = null
+    if (Object.keys(configData.countryOverrides).length === 0) {
+      configData.countryOverrides = null;
     }
 
-    // If the ID was changed, delete the configuration with the original ID
     if (originalId !== newId) {
-      await configStore.deleteConfig(originalId)
+      await configStore.deleteConfig(originalId);
     }
     
-    await configStore.saveConfig(newId, configData)
-
-    showEditDialog.value = false
-    await configStore.fetchConfigs()
+    await configStore.saveConfig(newId, configData);
+    showEditDialog.value = false;
+    await configStore.fetchConfigs();
   } catch (error) {
-    // Handle errors if needed
   }
 }
 
@@ -224,77 +219,45 @@ const handleDelete = async () => {
     showDeleteDialog.value = false
     configToDelete.value = null
   } catch (error) {
-    // Handle errors if needed
   }
 }
 
 const createNewConfig = async () => {
-  if (!newConfigName.value.trim()) {
-    return
-  }
+  if (!newConfigName.value.trim()) return;
 
   try {
-    let parsedValue = newConfigValue.value
-    if (newConfigValue.value && (newConfigValue.value.trim().startsWith('{') || newConfigValue.value.trim().startsWith('['))) {
-      try {
-        parsedValue = JSON.parse(newConfigValue.value)
-      } catch (e) {
-        // If JSON parsing fails, use original string
-      }
-    }
-
     const configData = {
       description: newConfigDescription.value,
-      content: parsedValue,
-    }
+      content: newConfigValue.value && (newConfigValue.value.trim().startsWith('{') || newConfigValue.value.trim().startsWith('['))
+        ? JSON.parse(newConfigValue.value)
+        : newConfigValue.value
+    };
 
-    await configStore.saveConfig(newConfigName.value, configData)
+    await configStore.saveConfig(newConfigName.value, configData);
     
-    newConfigName.value = ''
-    newConfigValue.value = ''
-    newConfigDescription.value = ''
+    newConfigName.value = '';
+    newConfigValue.value = '';
+    newConfigDescription.value = '';
   } catch (error) {
-    // Handle errors if needed
   }
 }
 
 const getConfigValueForDisplay = (config) => {
-  const userCountry = countryStore.currentCountry.code
-  const countryOverride = config.countryOverrides?.[userCountry]
+  const userCountry = countryStore.currentCountry.code;
+  const value = config.countryOverrides?.[userCountry] ?? config.content;
+  const displayValue = typeof value === 'object' ? JSON.stringify(value) : value;
   
-  if (countryOverride) {
-    const value = typeof countryOverride === 'object' 
-      ? JSON.stringify(countryOverride) 
-      : countryOverride
-
-    if (value && value.length > 20) {
-      return value.substring(0, 20) + '...'
-    }
-    return value
-  }
-  
-  const value = typeof config.content === 'object' 
-    ? JSON.stringify(config.content) 
-    : config.content
-
-  if (value && value.length > 20) {
-    return value.substring(0, 20) + '...'
-  }
-  return value
+  return displayValue?.length > 20 ? displayValue.substring(0, 20) + '...' : displayValue;
 }
 
 const renderConfigValue = (config) => {
-  const userCountry = countryStore.currentCountry.code
+  const userCountry = countryStore.currentCountry.code;
+  const hasCountryOverride = config.countryOverrides?.[userCountry] !== undefined;
+  const value = getConfigValueForDisplay(config);
   
-  const hasCountryOverride = config.countryOverrides?.[userCountry] !== undefined
-  
-  const value = getConfigValueForDisplay(config)
-  
-  if (hasCountryOverride && userCountry !== 'TR') {
-    return `<span class="country-value">${value}</span>`
-  }
-  
-  return value
+  return hasCountryOverride && userCountry !== 'TR' 
+    ? `<span class="country-value">${value}</span>`
+    : value;
 }
 </script>
 
@@ -494,7 +457,6 @@ const renderConfigValue = (config) => {
           <div v-if="selectedConfig" class="modal-content">
             <div class="form-field">
               <label class="field-label">Parameter Key</label>
-              <!-- Changed binding from read-only to v-model on editedId -->
               <InputText
                 v-model="editedId"
                 class="modern-input"

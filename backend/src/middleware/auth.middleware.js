@@ -1,30 +1,28 @@
 const admin = require('../config/firebase');
 
-const firebaseAuthMiddleware = async (req, res, next) => {
-  // Sadece POST, PUT, DELETE ve PATCH metodları için token kontrolü yap
-  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
-    try {
-      const authHeader = req.headers.authorization;
-      
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({
-          success: false,
-          message: 'Invalid authentication token provided'
-        });
-      }
+const PROTECTED_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH']);
 
-      const idToken = authHeader.split(' ')[1];
-      const decodedToken = await admin.auth().verifyIdToken(idToken);
-      
-      req.user = decodedToken;
-      next();
-    } catch (error) {
-      console.error('Authentication error:', error);
-      next(error);
+const firebaseAuthMiddleware = async (req, res, next) => {
+  if (!PROTECTED_METHODS.has(req.method)) {
+    return next();
+  }
+
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid authentication token provided'
+      });
     }
-  } else {
-    // GET istekleri için token kontrolü yapma
+
+    const idToken = authHeader.split(' ')[1];
+    req.user = await admin.auth().verifyIdToken(idToken);
     next();
+  } catch (error) {
+    console.error('Authentication error:', error);
+    next(error);
   }
 };
 
@@ -32,7 +30,7 @@ const apiTokenMiddleware = (req, res, next) => {
   try {
     const apiToken = req.headers['x-api-token'];
     
-    if (!apiToken || apiToken !== process.env.API_TOKEN) {
+    if (apiToken !== process.env.API_TOKEN) {
       return res.status(401).json({
         success: false,
         message: 'Invalid API token'
